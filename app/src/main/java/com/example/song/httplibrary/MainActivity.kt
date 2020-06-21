@@ -3,8 +3,9 @@ package com.example.song.httplibrary
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.example.song.httplibrary.library.awaitTimeout
+import com.example.song.httplibrary.library.*
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,7 +15,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        testLibraryCall()
+        testLibrarySuspendCall()
     }
 
     private fun testLibraryCall() {
@@ -35,6 +36,27 @@ class MainActivity : AppCompatActivity() {
                 Log.e("HelloWorld", "testLibraryCall onComplete " + Thread.currentThread())
             }
             .delayStart(1000)
+    }
+
+    private fun testLibrarySuspendCall() {
+        GlobalScope.launch {
+            LibraryCallImpl.getInstance()
+                .callTestApi(LibraryService::class.java)
+                .queryBaidu()
+                .suspendAwaitTimeout(1000)
+                .onFailure {
+                    Log.e("HelloWorld", "testLibrarySuspendCall onFailure " + it)
+                    Log.e("HelloWorld", "testLibrarySuspendCall onFailure " + Thread.currentThread())
+                }
+                .onSuccess {
+                    Log.e("HelloWorld", "testLibrarySuspendCall onSuccess " + it.value.string())
+                    Log.e("HelloWorld", "testLibrarySuspendCall onSuccess " + Thread.currentThread())
+                    HttpResult.Okay(emptyList<String>(), it.response)
+                }
+                .followDo {
+                    Log.e("HelloWorld", "testLibrarySuspendCall onComplete " + Thread.currentThread())
+                }
+        }
     }
 
 }
